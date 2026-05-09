@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <title>家計簿マネージャ — SMBC + VPass</title>
+    <link rel="stylesheet" href="/src/styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>家計簿マネージャ</h1>
+      <p class="subtitle">三井住友銀行(SMBC) + 三井住友カード(VPass) のCSVから月次家計簿を作成。<strong>すべての処理はブラウザ内で完結し、データは外部に送信されません。</strong></p>
+    </header>
+
+    <main>
+      <section id="upload" class="card">
+        <h2>1. CSVファイルを選択</h2>
+        <div id="dropzone" class="dropzone" tabindex="0">
+          <p>ここに <code>.csv</code> をドラッグ＆ドロップ、またはクリックして選択</p>
+          <p class="hint">SMBC・VPass・両方をまとめて投入可。複数月分まとめて読み込めます。</p>
+          <input type="file" id="fileInput" accept=".csv,text/csv" multiple hidden />
+        </div>
+        <ul id="fileList" class="file-list"></ul>
+        <div class="actions">
+          <button type="button" id="processBtn" disabled>集計する</button>
+          <button type="button" id="clearFilesBtn" class="secondary">ファイルをクリア</button>
+        </div>
+        <div id="parseErrors" class="errors"></div>
+      </section>
+
+      <section id="dedupe" class="card hidden">
+        <h2>2. カード引落の重複を確認</h2>
+        <p class="hint">銀行明細にあるVPass引落が、カード明細と重複計上されないようにします。チェックを外すと集計に含めます。</p>
+        <table id="dedupeTable">
+          <thead>
+            <tr>
+              <th>除外</th>
+              <th>引落日</th>
+              <th>銀行明細の内容</th>
+              <th>引落額</th>
+              <th>突合月のVPass合計</th>
+              <th>差額</th>
+              <th>自動判定</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </section>
+
+      <section id="summary" class="card hidden">
+        <h2>3. 月次サマリ</h2>
+        <div id="summaryNumbers" class="kpi"></div>
+        <div class="charts">
+          <div class="chart-card">
+            <h3>月次 収入・支出・収支</h3>
+            <canvas id="chartTotals"></canvas>
+          </div>
+          <div class="chart-card">
+            <h3>カテゴリ別 月次推移 (積み上げ)</h3>
+            <canvas id="chartStacked"></canvas>
+          </div>
+          <div class="chart-card">
+            <h3>主要カテゴリ 推移</h3>
+            <canvas id="chartLines"></canvas>
+          </div>
+        </div>
+        <div class="actions">
+          <button type="button" id="downloadBtn">Excel(.xlsx) をダウンロード</button>
+          <button type="button" id="saveHistoryBtn" class="secondary">履歴に保存（ブラウザ内）</button>
+        </div>
+      </section>
+
+      <section id="settings" class="card">
+        <h2>設定</h2>
+        <details>
+          <summary>カテゴリルールを差し替える</summary>
+          <p class="hint">JSON ファイル(<code>rules.json</code>)を読み込んで上書きできます。同じスキーマを使うこと。</p>
+          <input type="file" id="rulesInput" accept=".json,application/json" />
+          <button type="button" id="resetRulesBtn" class="secondary">デフォルトに戻す</button>
+          <p id="rulesStatus" class="hint"></p>
+        </details>
+        <details>
+          <summary>履歴データ</summary>
+          <p class="hint">月次の集計結果のみ <code>localStorage</code> に保存されます (生明細は保存されません)。</p>
+          <button type="button" id="clearHistoryBtn" class="danger">履歴を全消去</button>
+          <p id="historyStatus" class="hint"></p>
+        </details>
+      </section>
+    </main>
+
+    <footer>
+      <p>外部送信なし / オープンソース / <a href="https://github.com/koutasummers-bit/finance-manager" rel="noreferrer">GitHub</a></p>
+    </footer>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>

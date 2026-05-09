@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "default": "未分類",
+  "rules": [
+    { "match": { "field": "description", "type": "regex", "value": "(給与|ｷｭｳﾖ|キュウヨ|賞与)" }, "category": "収入", "subcategory": "給与" },
+    { "match": { "field": "description", "type": "regex", "value": "(振込|ﾌﾘｺﾐ|フリコミ)" }, "category": "収入", "subcategory": "振込" },
+    { "match": { "field": "description", "type": "regex", "value": "(ローソン|ﾛｰｿﾝ|セブン-?イレブン|ｾﾌﾞﾝ|ファミリーマート|ﾌｧﾐﾘｰﾏｰﾄ|ファミマ|ミニストップ|デイリーヤマザキ)" }, "category": "食費", "subcategory": "コンビニ" },
+    { "match": { "field": "description", "type": "regex", "value": "(イオン|ﾏﾙｴﾂ|マルエツ|西友|ライフ|ｵｰｹｰ|オーケー|サミット|成城石井|まいばすけっと)" }, "category": "食費", "subcategory": "スーパー" },
+    { "match": { "field": "description", "type": "regex", "value": "(マクドナルド|ｽﾀｰﾊﾞｯｸｽ|スターバックス|ドトール|タリーズ|モスバーガー|サイゼリヤ|吉野家|すき家|松屋|ガスト|ジョナサン|デニーズ)" }, "category": "食費", "subcategory": "外食" },
+    { "match": { "field": "description", "type": "regex", "value": "(JR東日本|JR西日本|JR東海|東京メトロ|東京ﾒﾄﾛ|都営|京急|京王|小田急|東急|西武|東武|京成|名鉄|阪急|阪神|近鉄|南海|地下鉄)" }, "category": "交通費" },
+    { "match": { "field": "description", "type": "regex", "value": "(Suica|ｽｲｶ|スイカ|PASMO|ﾊﾟｽﾓ|パスモ|ICOCA|オートチャージ|ｵｰﾄﾁｬｰｼﾞ)" }, "category": "交通費", "subcategory": "ICチャージ" },
+    { "match": { "field": "description", "type": "regex", "value": "(タクシー|ﾀｸｼｰ|GO\\b|DiDi|S\\.RIDE)" }, "category": "交通費", "subcategory": "タクシー" },
+    { "match": { "field": "description", "type": "regex", "value": "(東京電力|関西電力|中部電力|TEPCO|ENEOS\\s?でんき)" }, "category": "光熱費", "subcategory": "電気" },
+    { "match": { "field": "description", "type": "regex", "value": "(東京ガス|大阪ガス|東邦ガス|西部ガス)" }, "category": "光熱費", "subcategory": "ガス" },
+    { "match": { "field": "description", "type": "regex", "value": "(水道局|水道料金)" }, "category": "光熱費", "subcategory": "水道" },
+    { "match": { "field": "description", "type": "regex", "value": "(ドコモ|docomo|au\\b|KDDI|ソフトバンク|SoftBank|楽天モバイル|UQ|ワイモバイル|Y!mobile|povo|LINEMO|ahamo)" }, "category": "通信費", "subcategory": "携帯" },
+    { "match": { "field": "description", "type": "regex", "value": "(NTT|フレッツ|FLET|nuro|NURO|ビッグローブ|BIGLOBE|OCN|J:?COM|jcom)" }, "category": "通信費", "subcategory": "回線" },
+    { "match": { "field": "description", "type": "regex", "value": "(家賃|ﾔﾁﾝ|管理費|不動産|大東建託|レオパレス|ｱﾊﾟﾏﾝ)" }, "category": "住居費" },
+    { "match": { "field": "description", "type": "regex", "value": "(マツモトキヨシ|ﾏﾂﾓﾄｷﾖｼ|ウエルシア|ｳｴﾙｼｱ|ココカラファイン|スギ薬局|薬局|ﾄﾞﾗｯｸﾞ|ドラッグ)" }, "category": "医療", "subcategory": "薬局" },
+    { "match": { "field": "description", "type": "regex", "value": "(クリニック|医院|病院|歯科|皮膚科|内科)" }, "category": "医療", "subcategory": "病院" },
+    { "match": { "field": "description", "type": "regex", "value": "(Netflix|Spotify|YouTube\\s?Premium|Apple\\.com|iCloud|Google\\s?One|Adobe|Dropbox|Notion|Slack|GitHub|ChatGPT|OpenAI|Anthropic|Claude)" }, "category": "サブスク" },
+    { "match": { "field": "description", "type": "regex", "value": "(Amazon\\.co\\.jp|アマゾン|ｱﾏｿﾞﾝ|楽天市場|ヨドバシ|ビックカメラ|メルカリ|ﾒﾙｶﾘ|Yahoo!ショッピング)" }, "category": "ショッピング", "subcategory": "EC" },
+    { "match": { "field": "description", "type": "regex", "value": "(ユニクロ|UNIQLO|GU|無印良品|MUJI|ZARA|H&M|ｱﾊﾟﾚﾙ)" }, "category": "ショッピング", "subcategory": "衣料" },
+    { "match": { "field": "description", "type": "regex", "value": "(書店|ジュンク堂|紀伊國屋|丸善|TSUTAYA|蔦屋|ブックオフ)" }, "category": "ショッピング", "subcategory": "書籍" },
+    { "match": { "field": "description", "type": "regex", "value": "(映画|TOHOシネマズ|ユナイテッド・シネマ|MOVIX|シネコン|劇場)" }, "category": "エンタメ", "subcategory": "映画" },
+    { "match": { "field": "description", "type": "regex", "value": "(Steam|Nintendo|PlayStation|PSN|Xbox|App\\s?Store|Google\\s?Play)" }, "category": "エンタメ", "subcategory": "ゲーム" },
+    { "match": { "field": "description", "type": "regex", "value": "(生命保険|損害保険|自動車保険|火災保険|医療保険)" }, "category": "保険" },
+    { "match": { "field": "description", "type": "regex", "value": "(税|住民税|所得税|国民年金|健康保険|社会保険)" }, "category": "税金・社会保険" },
+    { "match": { "field": "description", "type": "regex", "value": "(ATM|ｴｰﾃｨｰｴﾑ|引出|ﾋｷﾀﾞｼ|現金|ﾋｷﾀﾞｼ手数料)" }, "category": "現金引出" },
+    { "match": { "field": "description", "type": "regex", "value": "(VPASS|三井住友カード|SMBCカード|ｶｰﾄﾞﾋｷｵﾄｼ|VISA)" }, "category": "カード引落", "priority": 100 }
+  ]
+}

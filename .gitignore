@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.vite/
+*.log
+.DS_Store
+
+# 個人データは絶対にコミットしない
+*.csv
+!tests/fixtures/**/*.csv
+tests/fixtures/real/
+private/

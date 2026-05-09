@@ -1,0 +1,198 @@
+:root {
+  --bg: #fafbfc;
+  --fg: #1a1a1a;
+  --muted: #6b7280;
+  --border: #e5e7eb;
+  --primary: #1a73e8;
+  --primary-fg: #ffffff;
+  --danger: #d93025;
+  --warn: #f9ab00;
+  --card-bg: #ffffff;
+  --shadow: 0 1px 3px rgba(0,0,0,0.06);
+  --radius: 8px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Noto Sans JP", "Yu Gothic", Meiryo, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  line-height: 1.55;
+}
+
+header {
+  background: linear-gradient(135deg, #1a73e8 0%, #4285f4 100%);
+  color: #fff;
+  padding: 32px 24px 24px;
+}
+header h1 { margin: 0 0 8px; font-size: 22px; }
+header .subtitle { margin: 0; font-size: 14px; opacity: 0.95; max-width: 800px; }
+header strong { color: #fff; }
+
+main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.card {
+  background: var(--card-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px 24px;
+  border: 1px solid var(--border);
+}
+
+.card.hidden { display: none; }
+
+h2 { margin: 0 0 12px; font-size: 18px; }
+h3 { margin: 0 0 8px; font-size: 14px; color: var(--muted); }
+
+.hint { color: var(--muted); font-size: 13px; margin: 8px 0; }
+
+.dropzone {
+  border: 2px dashed #c8cdd2;
+  border-radius: var(--radius);
+  padding: 36px 20px;
+  text-align: center;
+  cursor: pointer;
+  background: #fafbfc;
+  transition: background 0.15s, border-color 0.15s;
+}
+.dropzone:hover, .dropzone.dragover {
+  background: #eef4fe;
+  border-color: var(--primary);
+}
+.dropzone p { margin: 4px 0; }
+
+.file-list {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+}
+.file-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+.file-list .badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #e8f0fe;
+  color: var(--primary);
+  margin-right: 8px;
+}
+.file-list .badge.smbc { background: #e6f4ea; color: #1e8e3e; }
+.file-list .badge.vpass { background: #fef7e0; color: #b06000; }
+.file-list .badge.unknown { background: #fce8e6; color: var(--danger); }
+
+.actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+button {
+  font: inherit;
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--primary);
+  background: var(--primary);
+  color: var(--primary-fg);
+  cursor: pointer;
+}
+button:hover:not(:disabled) { filter: brightness(1.05); }
+button:disabled { opacity: 0.5; cursor: not-allowed; }
+button.secondary {
+  background: #fff;
+  color: var(--fg);
+  border-color: var(--border);
+}
+button.danger {
+  background: #fff;
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+.errors {
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--danger);
+  white-space: pre-wrap;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+th, td {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+th { background: #f3f5f7; font-weight: 600; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+tr.auto-exclude { background: #f0f7ff; }
+
+.kpi {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin: 12px 0;
+}
+.kpi .item {
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: #fafbfc;
+}
+.kpi .label { color: var(--muted); font-size: 12px; }
+.kpi .value { font-size: 20px; font-weight: 600; font-variant-numeric: tabular-nums; margin-top: 4px; }
+.kpi .value.negative { color: var(--danger); }
+.kpi .value.positive { color: #1e8e3e; }
+
+.charts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 16px;
+  margin: 16px 0;
+}
+.chart-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  background: #fff;
+}
+.chart-card canvas { width: 100% !important; height: 240px !important; }
+
+footer {
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+  padding: 16px;
+}
+footer a { color: var(--primary); text-decoration: none; }
+
+details summary {
+  cursor: pointer;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+input[type="file"] {
+  font-size: 13px;
+  margin-right: 8px;
+}
+
+@media (max-width: 600px) {
+  main { padding: 16px 8px; }
+  .card { padding: 16px; }
+  table { font-size: 12px; }
+}
