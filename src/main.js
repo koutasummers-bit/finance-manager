@@ -6,6 +6,7 @@ import { compileRules, categorizeAll } from './core/categorize.js';
 import { findCardWithdrawals, reconcile, applyExclusions } from './core/dedupe.js';
 import { aggregate, sourceBreakdown } from './core/aggregate.js';
 import { generateAdvice } from './core/advisor.js';
+import { monthKey } from './core/normalize.js';
 import { buildWorkbook, writeWorkbookBlob, suggestFileName } from './output/excel.js';
 import { saveAggregation, clearHistory, getHistory } from './storage/history.js';
 import defaultRules from './rules.default.json';
@@ -21,6 +22,9 @@ const state = {
   candidates: [],
   excluded: new Set(),
   agg: null,
+  // 計算期間 (どちらも 'YYYY-MM' or null = 制限なし)
+  period: { from: null, to: null },
+  availableMonths: [],
 };
 
 const $ = (sel) => document.querySelector(sel);
@@ -36,6 +40,11 @@ const dedupeBody = $('#dedupeTable tbody');
 const dedupeUncheckAllBtn = $('#dedupeUncheckAllBtn');
 const dedupeCheckAllBtn = $('#dedupeCheckAllBtn');
 const dedupeResetBtn = $('#dedupeResetBtn');
+const periodSection = $('#period');
+const periodInfo = $('#periodInfo');
+const periodPresets = $('#periodPresets');
+const periodFromInput = $('#periodFrom');
+const periodToInput = $('#periodTo');
 const summarySection = $('#summary');
 const summaryNumbersEl = $('#summaryNumbers');
 const downloadBtn = $('#downloadBtn');
@@ -170,6 +179,90 @@ saveHistoryBtn.addEventListener('click', () => {
   historyStatus.textContent = `${state.agg.months.length}ヶ月分を履歴に保存しました`;
 });
 
+// ---- 計算期間フィルタ ----
+
+function filterByPeriod(transactions, period) {
+  if (!period || (!period.from && !period.to)) return transactions;
+  return transactions.filter((t) => {
+    const m = monthKey(t.date);
+    if (!m) return false;
+    if (period.from && m < period.from) return false;
+    if (period.to && m > period.to) return false;
+    return true;
+  });
+}
+
+function shiftMonth(yyyymm, deltaMonths) {
+  const [y, mo] = yyyymm.split('-').map(Number);
+  const d = new Date(Date.UTC(y, mo - 1 + deltaMonths, 1));
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+}
+
+function applyPeriodPreset(preset) {
+  if (state.availableMonths.length === 0) return { from: null, to: null };
+  const min = state.availableMonths[0];
+  const max = state.availableMonths[state.availableMonths.length - 1];
+  switch (preset) {
+    case 'all': return { from: null, to: null };
+    case '3m': return { from: shiftMonth(max, -2), to: max };
+    case '6m': return { from: shiftMonth(max, -5), to: max };
+    case '12m': return { from: shiftMonth(max, -11), to: max };
+    case 'ytd': {
+      const year = max.split('-')[0];
+      return { from: `${year}-01`, to: max };
+    }
+    default: return { from: min, to: max };
+  }
+}
+
+function refreshPeriodUI() {
+  if (state.availableMonths.length === 0) {
+    periodSection.classList.add('hidden');
+    return;
+  }
+  periodSection.classList.remove('hidden');
+  const min = state.availableMonths[0];
+  const max = state.availableMonths[state.availableMonths.length - 1];
+  const monthsCount = state.availableMonths.length;
+
+  periodFromInput.min = min;
+  periodFromInput.max = max;
+  periodToInput.min = min;
+  periodToInput.max = max;
+  periodFromInput.value = state.period.from ?? min;
+  periodToInput.value = state.period.to ?? max;
+
+  const effFrom = state.period.from ?? min;
+  const effTo = state.period.to ?? max;
+  const effCount = state.availableMonths.filter((m) => m >= effFrom && m <= effTo).length;
+  periodInfo.textContent = `データ全期間: ${min} 〜 ${max} (${monthsCount}ヶ月) / 集計対象: ${effFrom} 〜 ${effTo} (${effCount}ヶ月)`;
+}
+
+periodPresets?.addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-preset]');
+  if (!btn) return;
+  state.period = applyPeriodPreset(btn.dataset.preset);
+  refreshPeriodUI();
+  recomputeAggregation();
+});
+
+periodFromInput?.addEventListener('change', () => {
+  state.period.from = periodFromInput.value || null;
+  if (state.period.from && state.period.to && state.period.from > state.period.to) {
+    state.period.to = state.period.from;
+  }
+  refreshPeriodUI();
+  recomputeAggregation();
+});
+periodToInput?.addEventListener('change', () => {
+  state.period.to = periodToInput.value || null;
+  if (state.period.from && state.period.to && state.period.from > state.period.to) {
+    state.period.from = state.period.to;
+  }
+  refreshPeriodUI();
+  recomputeAggregation();
+});
+
 // ---- 重複除外パネルの一括操作 ----
 
 dedupeUncheckAllBtn?.addEventListener('click', () => {
@@ -208,13 +301,35 @@ function runProcessing() {
     state.candidates.filter((c) => c.autoExclude).map((c) => c.bankIndex)
   );
 
+  // 利用可能な月の範囲を再計算し、計算期間UIを準備する
+  const monthsSet = new Set();
+  for (const t of [...state.bank, ...state.card]) {
+    const m = monthKey(t.date);
+    if (m) monthsSet.add(m);
+  }
+  state.availableMonths = [...monthsSet].sort();
+  // 既存の期間がある場合は範囲内に丸める。なければ全期間。
+  if (state.availableMonths.length > 0) {
+    const min = state.availableMonths[0];
+    const max = state.availableMonths[state.availableMonths.length - 1];
+    if (state.period.from && state.period.from < min) state.period.from = min;
+    if (state.period.from && state.period.from > max) state.period.from = null;
+    if (state.period.to && state.period.to > max) state.period.to = max;
+    if (state.period.to && state.period.to < min) state.period.to = null;
+  } else {
+    state.period = { from: null, to: null };
+  }
+  refreshPeriodUI();
+
   renderDedupe();
   recomputeAggregation();
 }
 
 function recomputeAggregation() {
   const bank = applyExclusions(state.bank, state.excluded);
-  state.agg = aggregate(bank, state.card);
+  const filteredBank = filterByPeriod(bank, state.period);
+  const filteredCard = filterByPeriod(state.card, state.period);
+  state.agg = aggregate(filteredBank, filteredCard);
   renderSummary(state.agg);
 }
 
@@ -280,7 +395,9 @@ function renderAdvice(container, advice) {
 function renderSummary(agg) {
   summarySection.classList.remove('hidden');
   const bankWithExclusions = applyExclusions(state.bank, state.excluded);
-  const breakdown = sourceBreakdown(bankWithExclusions, state.card);
+  const filteredBank = filterByPeriod(bankWithExclusions, state.period);
+  const filteredCard = filterByPeriod(state.card, state.period);
+  const breakdown = sourceBreakdown(filteredBank, filteredCard);
 
   const totalIncome = agg.totals.grandIncome;
   const totalExpense = agg.totals.grandExpense;
@@ -330,7 +447,7 @@ function renderSummary(agg) {
 
   const topTxTable = document.getElementById('topTxTable');
   if (topTxTable) {
-    const allTx = [...bankWithExclusions, ...state.card];
+    const allTx = [...filteredBank, ...filteredCard];
     renderTopTxTable(topTxTable, allTx, 20);
   }
 }
@@ -341,11 +458,20 @@ downloadBtn.addEventListener('click', async () => {
   downloadBtn.textContent = 'Excel生成中...';
   try {
     const bank = applyExclusions(state.bank, state.excluded);
-    const breakdown = sourceBreakdown(bank, state.card);
+    const filteredBank = filterByPeriod(bank, state.period);
+    const filteredCard = filterByPeriod(state.card, state.period);
+    const breakdown = sourceBreakdown(filteredBank, filteredCard);
     const advice = generateAdvice(state.agg);
     // 現在画面に描画されているグラフを PNG として収集し、Excel のダッシュボードに埋め込む
     const chartImages = await collectChartImages();
-    const wb = await buildWorkbook({ bank, card: state.card, agg: state.agg, chartImages, breakdown, advice });
+    const wb = await buildWorkbook({
+      bank: filteredBank,
+      card: filteredCard,
+      agg: state.agg,
+      chartImages,
+      breakdown,
+      advice,
+    });
     const blob = await writeWorkbookBlob(wb);
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

@@ -54,8 +54,25 @@
         </table>
       </section>
 
+      <section id="period" class="card hidden">
+        <h2>3. 計算期間</h2>
+        <p class="hint" id="periodInfo"></p>
+        <div class="period-presets" id="periodPresets">
+          <button type="button" class="secondary" data-preset="all">全期間</button>
+          <button type="button" class="secondary" data-preset="3m">直近3ヶ月</button>
+          <button type="button" class="secondary" data-preset="6m">直近6ヶ月</button>
+          <button type="button" class="secondary" data-preset="12m">直近12ヶ月</button>
+          <button type="button" class="secondary" data-preset="ytd">今年</button>
+        </div>
+        <div class="period-range">
+          <label>開始月 <input type="month" id="periodFrom"></label>
+          <span class="period-sep">〜</span>
+          <label>終了月 <input type="month" id="periodTo"></label>
+        </div>
+      </section>
+
       <section id="summary" class="card hidden">
-        <h2>3. 月次サマリ</h2>
+        <h2>4. 月次サマリ</h2>
         <div id="summaryNumbers" class="kpi"></div>
         <div class="charts">
           <div class="chart-card">
