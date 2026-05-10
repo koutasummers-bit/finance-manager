@@ -18,9 +18,9 @@
       <section id="upload" class="card">
         <h2>1. CSVファイルを選択</h2>
         <div id="dropzone" class="dropzone" tabindex="0">
-          <p>ここに <code>.csv</code> をドラッグ＆ドロップ、またはクリックして選択</p>
-          <p class="hint">SMBC・VPass・両方をまとめて投入可。複数月分まとめて読み込めます。</p>
-          <input type="file" id="fileInput" accept=".csv,text/csv" multiple hidden />
+          <p>ここに CSV をドラッグ＆ドロップ、またはクリックして選択</p>
+          <p class="hint">拡張子は <code>.csv</code> / <code>.CSV</code> / <code>.txt</code> / <code>.tsv</code> や拡張子なしも可。SMBC・VPass・両方をまとめて投入できます。</p>
+          <input type="file" id="fileInput" accept=".csv,.CSV,.txt,.tsv,text/csv,text/plain" multiple hidden />
         </div>
         <ul id="fileList" class="file-list"></ul>
         <div class="actions">

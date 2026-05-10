@@ -69,16 +69,18 @@ clearFilesBtn.addEventListener('click', () => {
 
 async function handleFiles(files) {
   for (const file of files) {
-    if (!/\.csv$/i.test(file.name)) continue;
+    // 拡張子が .csv でなくても中身を見て判別する。バイナリ等は decode/parse で
+    // エラーを返し、UI 上に表示する。
     try {
       const text = await decodeFile(file);
       const format = detectFormat(text, file.name);
-      let parsed = { transactions: [], errors: [`形式を判定できません: ${file.name}`] };
+      let parsed;
       if (format === 'smbc') parsed = parseSmbc(text);
       else if (format === 'vpass') parsed = parseVpass(text);
+      else parsed = { transactions: [], errors: [`形式を判定できません: ${file.name} (上のセレクタから手動で SMBC / VPass を指定できます)`] };
       state.files.push({ file, format, transactions: parsed.transactions, errors: parsed.errors });
     } catch (err) {
-      state.files.push({ file, format: 'unknown', transactions: [], errors: [String(err)] });
+      state.files.push({ file, format: 'unknown', transactions: [], errors: [`${file.name}: ${String(err)}`] });
     }
   }
   renderFileList();
