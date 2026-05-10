@@ -33,6 +33,11 @@
       <section id="dedupe" class="card hidden">
         <h2>2. カード引落の重複を確認</h2>
         <p class="hint">銀行明細にあるVPass引落が、カード明細と重複計上されないようにします。チェックを外すと集計に含めます。</p>
+        <div class="actions" id="dedupeActions">
+          <button type="button" id="dedupeUncheckAllBtn" class="secondary">すべてのチェックを外す</button>
+          <button type="button" id="dedupeCheckAllBtn" class="secondary">すべてチェック</button>
+          <button type="button" id="dedupeResetBtn" class="secondary">自動判定に戻す</button>
+        </div>
         <table id="dedupeTable">
           <thead>
             <tr>

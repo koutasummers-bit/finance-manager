@@ -33,6 +33,9 @@ const clearFilesBtn = $('#clearFilesBtn');
 const parseErrorsEl = $('#parseErrors');
 const dedupeSection = $('#dedupe');
 const dedupeBody = $('#dedupeTable tbody');
+const dedupeUncheckAllBtn = $('#dedupeUncheckAllBtn');
+const dedupeCheckAllBtn = $('#dedupeCheckAllBtn');
+const dedupeResetBtn = $('#dedupeResetBtn');
 const summarySection = $('#summary');
 const summaryNumbersEl = $('#summaryNumbers');
 const downloadBtn = $('#downloadBtn');
@@ -165,6 +168,26 @@ saveHistoryBtn.addEventListener('click', () => {
   if (!state.agg) return;
   saveAggregation(state.agg);
   historyStatus.textContent = `${state.agg.months.length}ヶ月分を履歴に保存しました`;
+});
+
+// ---- 重複除外パネルの一括操作 ----
+
+dedupeUncheckAllBtn?.addEventListener('click', () => {
+  state.excluded.clear();
+  renderDedupe();
+  recomputeAggregation();
+});
+dedupeCheckAllBtn?.addEventListener('click', () => {
+  state.excluded = new Set(state.candidates.map((c) => c.bankIndex));
+  renderDedupe();
+  recomputeAggregation();
+});
+dedupeResetBtn?.addEventListener('click', () => {
+  state.excluded = new Set(
+    state.candidates.filter((c) => c.autoExclude).map((c) => c.bankIndex)
+  );
+  renderDedupe();
+  recomputeAggregation();
 });
 
 // ---- 集計実行 ----
