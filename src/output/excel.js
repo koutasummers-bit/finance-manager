@@ -23,25 +23,39 @@ function applyTotalStyle(row) {
   });
 }
 
-function buildSummarySheet(workbook, agg) {
+function buildSummarySheet(workbook, agg, breakdown) {
   const sheet = workbook.addWorksheet('月次サマリ');
   const incomeHeaders = agg.incomeCategories;
   const expenseHeaders = agg.categories;
-  const headers = ['月', ...incomeHeaders, '収入計', ...expenseHeaders, '支出計', '収支'];
+  // 「銀行支出 / カード支出」を支出計の手前に挿入してソース内訳を見える化
+  const headers = [
+    '月',
+    ...incomeHeaders,
+    '収入計',
+    ...expenseHeaders,
+    '銀行支出',
+    'カード支出',
+    '支出計',
+    '収支',
+  ];
   const headerRow = sheet.addRow(headers);
   applyHeaderStyle(headerRow);
 
-  const monthSums = {};
-  for (const month of agg.months) {
+  // 月は新しい順で表示
+  const months = [...agg.months].reverse();
+
+  for (const month of months) {
     const data = agg.summary[month] ?? {};
+    const src = breakdown?.byMonth?.[month] ?? { bank: { income: 0, expense: 0 }, card: { income: 0, expense: 0 } };
     const row = [month];
     for (const c of incomeHeaders) row.push(data[c] ?? 0);
     row.push(data._income ?? 0);
     for (const c of expenseHeaders) row.push(data[c] ?? 0);
+    row.push(src.bank.expense);
+    row.push(src.card.expense);
     row.push(data._expense ?? 0);
     row.push(data._balance ?? 0);
     sheet.addRow(row);
-    monthSums[month] = data;
   }
 
   if (agg.months.length > 0) {
@@ -53,6 +67,8 @@ function buildSummarySheet(workbook, agg) {
     for (const c of expenseHeaders) {
       totals.push(agg.months.reduce((s, m) => s + (agg.summary[m]?.[c] ?? 0), 0));
     }
+    totals.push(breakdown?.totals?.bank?.expense ?? 0);
+    totals.push(breakdown?.totals?.card?.expense ?? 0);
     totals.push(agg.totals.grandExpense);
     totals.push(agg.totals.grandIncome - agg.totals.grandExpense);
     const totalRow = sheet.addRow(totals);
@@ -130,7 +146,8 @@ function buildCardSheet(workbook, card) {
 
 function buildPivotSheet(workbook, agg) {
   const sheet = workbook.addWorksheet('カテゴリ別集計');
-  const months = agg.months;
+  // 月は新しい順で並べる
+  const months = [...agg.months].reverse();
   const headers = ['カテゴリ', ...months, '合計', '平均'];
   applyHeaderStyle(sheet.addRow(headers));
 
@@ -251,13 +268,13 @@ function buildDashboardSheet(workbook, agg, chartImages) {
   return sheet;
 }
 
-export async function buildWorkbook({ bank, card, agg, chartImages = [] }) {
+export async function buildWorkbook({ bank, card, agg, chartImages = [], breakdown }) {
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'finance-manager';
   workbook.created = new Date();
 
   buildDashboardSheet(workbook, agg, chartImages);
-  buildSummarySheet(workbook, agg);
+  buildSummarySheet(workbook, agg, breakdown);
   buildPivotSheet(workbook, agg);
   buildBankSheet(workbook, bank);
   buildCardSheet(workbook, card);

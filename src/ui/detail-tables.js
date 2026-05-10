@@ -19,12 +19,13 @@ function escapeHtml(s) {
 }
 
 // カテゴリ × 月のクロス集計テーブル。
-// rows = カテゴリ、cols = 月、合計列・月平均・構成比を末尾に追加。
+// rows = カテゴリ、cols = 月（新しい順）、合計列・月平均・構成比を末尾に追加。
 // ヘッダクリックでソート可能。
 export function renderCategoryTable(table, agg, kind = 'expense') {
   // expense: 支出カテゴリ、income: 収入カテゴリ
   const cats = kind === 'income' ? agg.incomeCategories : agg.categories;
-  const months = agg.months;
+  // 月は新しい順で表示
+  const months = [...agg.months].reverse();
   const grandTotal = cats.reduce(
     (s, c) => s + months.reduce((s2, m) => s2 + Math.max(0, agg.summary[m]?.[c] ?? 0), 0),
     0
@@ -156,15 +157,28 @@ export function renderTopTxTable(table, transactions, limit = 20) {
   }
 }
 
-// 月別の支出/収入/収支テーブル (各月の主要支出カテゴリを表示)
-export function renderMonthlyTable(table, agg) {
+// 月別の収支テーブル (新しい順)。銀行/カード/合計の支出と銀行収入・収支・主要支出カテゴリを併記。
+// breakdown: aggregate.js の sourceBreakdown(bank, card).byMonth
+export function renderMonthlyTable(table, agg, breakdown = {}) {
   const thead = table.querySelector('thead');
   const tbody = table.querySelector('tbody');
-  thead.innerHTML = '<tr><th>月</th><th class="num">収入</th><th class="num">支出</th><th class="num">収支</th><th>主要支出カテゴリ TOP3</th></tr>';
+  thead.innerHTML =
+    '<tr>' +
+    '<th>月</th>' +
+    '<th class="num">収入 (銀行)</th>' +
+    '<th class="num">銀行支出</th>' +
+    '<th class="num">カード支出</th>' +
+    '<th class="num">支出計</th>' +
+    '<th class="num">収支</th>' +
+    '<th>主要支出カテゴリ TOP3</th>' +
+    '</tr>';
   tbody.innerHTML = '';
 
-  for (const m of agg.months) {
+  // 月は新しい順
+  const months = [...agg.months].reverse();
+  for (const m of months) {
     const data = agg.summary[m] ?? {};
+    const src = breakdown[m] ?? { bank: { income: 0, expense: 0 }, card: { income: 0, expense: 0 } };
     const tops = agg.categories
       .map((c) => ({ c, v: Math.max(0, data[c] ?? 0) }))
       .filter((x) => x.v > 0)
@@ -177,10 +191,36 @@ export function renderMonthlyTable(table, agg) {
     const tr = document.createElement('tr');
     tr.innerHTML =
       `<td><strong>${m}</strong></td>` +
-      `<td class="num positive">${fmtYen(data._income ?? 0)}</td>` +
-      `<td class="num negative">${fmtYen(data._expense ?? 0)}</td>` +
-      `<td class="num ${balCls}">${fmtYen(balance)}</td>` +
+      `<td class="num positive">${fmtYen(src.bank.income)}</td>` +
+      `<td class="num">${fmtYen(src.bank.expense)}</td>` +
+      `<td class="num">${fmtYen(src.card.expense)}</td>` +
+      `<td class="num negative"><strong>${fmtYen(data._expense ?? 0)}</strong></td>` +
+      `<td class="num ${balCls}"><strong>${fmtYen(balance)}</strong></td>` +
       `<td>${tops || '<span class="hint">-</span>'}</td>`;
     tbody.appendChild(tr);
   }
+
+  // 合計行
+  const totalRow = document.createElement('tr');
+  totalRow.className = 'total-row';
+  const totals = months.reduce((acc, m) => {
+    const s = breakdown[m] ?? { bank: { income: 0, expense: 0 }, card: { income: 0, expense: 0 } };
+    const d = agg.summary[m] ?? {};
+    acc.bankIncome += s.bank.income;
+    acc.bankExpense += s.bank.expense;
+    acc.cardExpense += s.card.expense;
+    acc.totalExpense += d._expense ?? 0;
+    acc.balance += d._balance ?? 0;
+    return acc;
+  }, { bankIncome: 0, bankExpense: 0, cardExpense: 0, totalExpense: 0, balance: 0 });
+  const balCls = totals.balance >= 0 ? 'positive' : 'negative';
+  totalRow.innerHTML =
+    `<td><strong>合計</strong></td>` +
+    `<td class="num positive">${fmtYen(totals.bankIncome)}</td>` +
+    `<td class="num">${fmtYen(totals.bankExpense)}</td>` +
+    `<td class="num">${fmtYen(totals.cardExpense)}</td>` +
+    `<td class="num negative"><strong>${fmtYen(totals.totalExpense)}</strong></td>` +
+    `<td class="num ${balCls}"><strong>${fmtYen(totals.balance)}</strong></td>` +
+    `<td></td>`;
+  tbody.appendChild(totalRow);
 }

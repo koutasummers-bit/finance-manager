@@ -4,7 +4,7 @@ import { parseSmbc } from './parser/smbc.js';
 import { parseVpass } from './parser/vpass.js';
 import { compileRules, categorizeAll } from './core/categorize.js';
 import { findCardWithdrawals, reconcile, applyExclusions } from './core/dedupe.js';
-import { aggregate } from './core/aggregate.js';
+import { aggregate, sourceBreakdown } from './core/aggregate.js';
 import { buildWorkbook, writeWorkbookBlob, suggestFileName } from './output/excel.js';
 import { saveAggregation, clearHistory, getHistory } from './storage/history.js';
 import defaultRules from './rules.default.json';
@@ -236,6 +236,9 @@ function escapeHtml(s) {
 
 function renderSummary(agg) {
   summarySection.classList.remove('hidden');
+  const bankWithExclusions = applyExclusions(state.bank, state.excluded);
+  const breakdown = sourceBreakdown(bankWithExclusions, state.card);
+
   const totalIncome = agg.totals.grandIncome;
   const totalExpense = agg.totals.grandExpense;
   const balance = totalIncome - totalExpense;
@@ -243,14 +246,25 @@ function renderSummary(agg) {
   summaryNumbersEl.innerHTML = '';
   const items = [
     { label: '対象月数', value: `${agg.months.length} ヶ月` },
-    { label: '収入合計', value: fmtYen(totalIncome), cls: 'positive' },
-    { label: '支出合計', value: fmtYen(totalExpense), cls: 'negative' },
+    {
+      label: '収入合計',
+      value: fmtYen(totalIncome),
+      sub: `銀行: ${fmtYen(breakdown.totals.bank.income)}`,
+      cls: 'positive',
+    },
+    {
+      label: '支出合計',
+      value: fmtYen(totalExpense),
+      sub: `銀行: ${fmtYen(breakdown.totals.bank.expense)} / カード: ${fmtYen(breakdown.totals.card.expense)}`,
+      cls: 'negative',
+    },
     { label: '収支', value: fmtYen(balance), cls: balance >= 0 ? 'positive' : 'negative' },
   ];
   for (const it of items) {
     const div = document.createElement('div');
     div.className = 'item';
-    div.innerHTML = `<div class="label">${it.label}</div><div class="value ${it.cls ?? ''}">${it.value}</div>`;
+    const sub = it.sub ? `<div class="sub">${it.sub}</div>` : '';
+    div.innerHTML = `<div class="label">${it.label}</div><div class="value ${it.cls ?? ''}">${it.value}</div>${sub}`;
     summaryNumbersEl.appendChild(div);
   }
 
@@ -259,7 +273,7 @@ function renderSummary(agg) {
 
   // 詳細テーブル
   const monthlyTable = document.getElementById('monthlyTable');
-  if (monthlyTable) renderMonthlyTable(monthlyTable, agg);
+  if (monthlyTable) renderMonthlyTable(monthlyTable, agg, breakdown.byMonth);
 
   const expenseCatTable = document.getElementById('expenseCatTable');
   if (expenseCatTable) renderCategoryTable(expenseCatTable, agg, 'expense');
@@ -269,7 +283,7 @@ function renderSummary(agg) {
 
   const topTxTable = document.getElementById('topTxTable');
   if (topTxTable) {
-    const allTx = [...applyExclusions(state.bank, state.excluded), ...state.card];
+    const allTx = [...bankWithExclusions, ...state.card];
     renderTopTxTable(topTxTable, allTx, 20);
   }
 }
@@ -280,9 +294,10 @@ downloadBtn.addEventListener('click', async () => {
   downloadBtn.textContent = 'Excel生成中...';
   try {
     const bank = applyExclusions(state.bank, state.excluded);
+    const breakdown = sourceBreakdown(bank, state.card);
     // 現在画面に描画されているグラフを PNG として収集し、Excel のダッシュボードに埋め込む
     const chartImages = await collectChartImages();
-    const wb = await buildWorkbook({ bank, card: state.card, agg: state.agg, chartImages });
+    const wb = await buildWorkbook({ bank, card: state.card, agg: state.agg, chartImages, breakdown });
     const blob = await writeWorkbookBlob(wb);
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

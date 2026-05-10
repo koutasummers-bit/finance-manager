@@ -103,3 +103,34 @@ export function aggregate(bank, card) {
     totals: { byCategory: totalsByCategory, byMonth: totalsByMonth, grandIncome, grandExpense },
   };
 }
+
+// ソース (bank / card) ごとの月次収支内訳。月次サマリで「銀行/カードの内訳」を出すために使う。
+// 戻り値: { [month]: { bank: { income, expense }, card: { income, expense } },
+//          totals: { bank: { income, expense }, card: { income, expense } } }
+export function sourceBreakdown(bank, card) {
+  const byMonth = {};
+  const totals = { bank: { income: 0, expense: 0 }, card: { income: 0, expense: 0 } };
+
+  const add = (txs, source) => {
+    for (const t of txs) {
+      if (t.isExcluded) continue;
+      const m = monthKey(t.date);
+      if (!m) continue;
+      const amount = t.amount ?? 0;
+      if (amount === 0) continue;
+      const value = Math.abs(amount);
+      const isIncome = amount > 0;
+      byMonth[m] ??= { bank: { income: 0, expense: 0 }, card: { income: 0, expense: 0 } };
+      if (isIncome) {
+        byMonth[m][source].income += value;
+        totals[source].income += value;
+      } else {
+        byMonth[m][source].expense += value;
+        totals[source].expense += value;
+      }
+    }
+  };
+  add(bank, 'bank');
+  add(card, 'card');
+  return { byMonth, totals };
+}
