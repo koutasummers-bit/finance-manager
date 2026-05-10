@@ -8,7 +8,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const fixture = resolve(here, 'fixtures/smbc-sample.csv');
 
 describe('parseSmbc', () => {
-  it('parses sample SMBC CSV (no header)', () => {
+  it('parses sample SMBC CSV with header and 7 columns (incl. ラベル)', () => {
     const text = readFileSync(fixture, 'utf-8');
     const { transactions, errors } = parseSmbc(text);
     expect(errors).toEqual([]);
@@ -22,13 +22,13 @@ describe('parseSmbc', () => {
     expect(first.isIncome).toBe(true);
     expect(first.description).toContain('給与振込');
 
-    const vpassRow = transactions.find((t) => t.description.includes('VPASS'));
-    expect(vpassRow).toBeDefined();
-    expect(vpassRow.withdrawal).toBe(45230);
-    expect(vpassRow.amount).toBe(-45230);
+    const cardRow = transactions.find((t) => t.description.includes('ﾐﾂｲｽﾐﾄﾓ') || t.description.includes('ミツイスミトモ'));
+    expect(cardRow).toBeDefined();
+    expect(cardRow.withdrawal).toBe(45230);
+    expect(cardRow.amount).toBe(-45230);
   });
 
-  it('handles header row when present', () => {
+  it('handles 6-column rows (legacy format without ラベル)', () => {
     const text =
       '年月日,お引出し金額,お預入れ金額,お取り扱い内容,残高,メモ\n' +
       '2026/04/01,,250000,給与,1000000,\n' +

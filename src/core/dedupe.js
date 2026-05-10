@@ -5,7 +5,14 @@ import { normalizeText, monthKey } from './normalize.js';
 // UI 側でユーザーが手動 ON/OFF 可能なため、ここでは候補とマッチ情報を返すのみで
 // 集計時に除外するかは別レイヤで決める。
 
-const DEFAULT_KEYWORDS = ['VPASS', 'ヴィパス', '三井住友カード', 'SMBCカード', 'カード引落', 'カードヒキオトシ', 'VISA'];
+const DEFAULT_KEYWORDS = [
+  'VPASS', 'ヴィパス',
+  '三井住友カード', 'SMBCカード',
+  // 半角カナで明細に来た場合は NFKC で全角化されるため、全角形を登録
+  'ミツイスミトモカ', 'ミツイスミトモ',
+  'カード引落', 'カードヒキオトシ',
+  'VISA',
+];
 
 function matchesKeyword(description, keywords) {
   const target = normalizeText(description).toUpperCase();

@@ -67,13 +67,12 @@ describe('end-to-end pipeline (browser-like)', () => {
     const unclassified = bank.filter((t) => t.category === '未分類').length;
     expect(unclassified).toBeLessThan(bank.length); // 全件未分類はおかしい
 
-    // 重複検出
+    // 重複検出: ﾐﾂｲｽﾐﾄﾓｶ-ﾄﾞ (4月) と 三井住友カード (5月) を検出
     const candidates = findCardWithdrawals(bank);
     const reconciled = reconcile(candidates, card);
-    expect(candidates.length).toBeGreaterThanOrEqual(2); // VPASSヒキオトシ、三井住友カード
+    expect(candidates.length).toBeGreaterThanOrEqual(2);
+    // サンプルの引落額と VPass 月合計はわざと差額を大きくしてある
     const auto = reconciled.filter((c) => c.autoExclude);
-    // 4月の引落45230 と vpass4月合計18560、5月引落38900 と 5月合計5750 で
-    // どちらも差額が大きく autoExclude にはならないことを確認
     expect(auto.length).toBe(0);
 
     const excludedSet = new Set();

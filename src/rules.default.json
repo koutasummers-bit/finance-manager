@@ -27,6 +27,6 @@
     { "match": { "field": "description", "type": "regex", "value": "(生命保険|損害保険|自動車保険|火災保険|医療保険)" }, "category": "保険" },
     { "match": { "field": "description", "type": "regex", "value": "(税|住民税|所得税|国民年金|健康保険|社会保険)" }, "category": "税金・社会保険" },
     { "match": { "field": "description", "type": "regex", "value": "(ATM|ｴｰﾃｨｰｴﾑ|引出|ﾋｷﾀﾞｼ|現金|ﾋｷﾀﾞｼ手数料)" }, "category": "現金引出" },
-    { "match": { "field": "description", "type": "regex", "value": "(VPASS|三井住友カード|SMBCカード|ｶｰﾄﾞﾋｷｵﾄｼ|VISA)" }, "category": "カード引落", "priority": 100 }
+    { "match": { "field": "description", "type": "regex", "value": "(VPASS|三井住友カード|SMBCカード|ミツイスミトモカ|ミツイスミトモ|カードヒキオトシ|VISA)" }, "category": "カード引落", "priority": 100 }
   ]
 }
