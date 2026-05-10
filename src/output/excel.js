@@ -180,7 +180,7 @@ function buildPivotSheet(workbook, agg) {
   return sheet;
 }
 
-function buildDashboardSheet(workbook, agg, chartImages) {
+function buildDashboardSheet(workbook, agg, chartImages, advice = []) {
   const sheet = workbook.addWorksheet('ダッシュボード');
   sheet.columns = [
     { width: 3 }, { width: 22 }, { width: 18 }, { width: 18 }, { width: 18 },
@@ -225,9 +225,44 @@ function buildDashboardSheet(workbook, agg, chartImages) {
     sheet.mergeCells(kpiStartRow, col, kpiStartRow, col + 1);
   }
 
+  // アドバイスセクション
+  let nextRow = kpiStartRow + 3;
+  if (advice && advice.length > 0) {
+    const adviceHeader = sheet.getCell(nextRow, 2);
+    adviceHeader.value = '💡 アドバイス';
+    adviceHeader.font = { size: 13, bold: true };
+    nextRow += 1;
+    const colorMap = {
+      alert: { fill: 'FFFDECEA', text: 'FFB91C1C' },
+      warning: { fill: 'FFFFF8E6', text: 'FFB06000' },
+      info: { fill: 'FFE6F4EA', text: 'FF1E8E3E' },
+    };
+    for (const a of advice) {
+      const colors = colorMap[a.severity] ?? colorMap.info;
+      const titleCell = sheet.getCell(nextRow, 2);
+      titleCell.value = `${a.icon ?? ''} ${a.title}`;
+      titleCell.font = { size: 11, bold: true, color: { argb: colors.text } };
+      titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.fill } };
+      titleCell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
+      sheet.mergeCells(nextRow, 2, nextRow, 9);
+
+      if (a.detail) {
+        const detailCell = sheet.getCell(nextRow + 1, 2);
+        detailCell.value = a.detail;
+        detailCell.font = { size: 10, color: { argb: 'FF6B7280' } };
+        detailCell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
+        sheet.mergeCells(nextRow + 1, 2, nextRow + 1, 9);
+        nextRow += 2;
+      } else {
+        nextRow += 1;
+      }
+    }
+    nextRow += 1; // 空行
+  }
+
   // チャート画像を 2 列レイアウトで配置
   if (chartImages && chartImages.length > 0) {
-    const chartTopRow = kpiStartRow + 4;
+    const chartTopRow = nextRow;
     let row = chartTopRow;
     let col = 1; // B 列起点 (0=A, 1=B)
     for (let i = 0; i < chartImages.length; i++) {
@@ -268,12 +303,12 @@ function buildDashboardSheet(workbook, agg, chartImages) {
   return sheet;
 }
 
-export async function buildWorkbook({ bank, card, agg, chartImages = [], breakdown }) {
+export async function buildWorkbook({ bank, card, agg, chartImages = [], breakdown, advice = [] }) {
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'finance-manager';
   workbook.created = new Date();
 
-  buildDashboardSheet(workbook, agg, chartImages);
+  buildDashboardSheet(workbook, agg, chartImages, advice);
   buildSummarySheet(workbook, agg, breakdown);
   buildPivotSheet(workbook, agg);
   buildBankSheet(workbook, bank);

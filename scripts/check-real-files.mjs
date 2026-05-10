@@ -9,6 +9,7 @@ import { parseVpass } from '../src/parser/vpass.js';
 import { compileRules, categorizeAll } from '../src/core/categorize.js';
 import { findCardWithdrawals, reconcile, applyExclusions } from '../src/core/dedupe.js';
 import { aggregate } from '../src/core/aggregate.js';
+import { generateAdvice } from '../src/core/advisor.js';
 import { buildWorkbook, writeWorkbookBlob, suggestFileName } from '../src/output/excel.js';
 
 const files = process.argv.slice(2);
@@ -81,7 +82,15 @@ for (const m of agg.months) {
   console.log(`  ${m}: income=${agg.summary[m]._income} expense=${agg.summary[m]._expense} balance=${agg.summary[m]._balance}`);
 }
 
+console.log('\n=== Advice ===');
+const advice = generateAdvice(agg);
+if (advice.length === 0) console.log('  (no advice)');
+for (const a of advice) {
+  console.log(`  [${a.severity}] ${a.icon ?? ''} ${a.title}`);
+  if (a.detail) console.log(`      ${a.detail}`);
+}
+
 console.log('\n=== Excel ===');
-const wb = await buildWorkbook({ bank: bankWithExclusions, card: cards, agg });
+const wb = await buildWorkbook({ bank: bankWithExclusions, card: cards, agg, advice });
 const blob = await writeWorkbookBlob(wb);
 console.log(`  generated ${suggestFileName(agg.months)} (${blob.size} bytes, ${wb.worksheets.length} sheets)`);

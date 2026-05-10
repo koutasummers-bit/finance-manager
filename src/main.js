@@ -5,6 +5,7 @@ import { parseVpass } from './parser/vpass.js';
 import { compileRules, categorizeAll } from './core/categorize.js';
 import { findCardWithdrawals, reconcile, applyExclusions } from './core/dedupe.js';
 import { aggregate, sourceBreakdown } from './core/aggregate.js';
+import { generateAdvice } from './core/advisor.js';
 import { buildWorkbook, writeWorkbookBlob, suggestFileName } from './output/excel.js';
 import { saveAggregation, clearHistory, getHistory } from './storage/history.js';
 import defaultRules from './rules.default.json';
@@ -234,6 +235,25 @@ function escapeHtml(s) {
   );
 }
 
+function renderAdvice(container, advice) {
+  container.innerHTML = '';
+  if (!advice || advice.length === 0) {
+    container.innerHTML = '<div class="advice-empty">特に気になる変化はありません。順調です 👍</div>';
+    return;
+  }
+  for (const a of advice) {
+    const card = document.createElement('div');
+    card.className = `advice-card ${a.severity}`;
+    card.innerHTML =
+      `<div class="icon">${a.icon ?? ''}</div>` +
+      `<div class="body">` +
+      `<div class="title">${escapeHtml(a.title)}</div>` +
+      (a.detail ? `<div class="detail">${escapeHtml(a.detail)}</div>` : '') +
+      `</div>`;
+    container.appendChild(card);
+  }
+}
+
 function renderSummary(agg) {
   summarySection.classList.remove('hidden');
   const bankWithExclusions = applyExclusions(state.bank, state.excluded);
@@ -271,6 +291,10 @@ function renderSummary(agg) {
   destroyCharts();
   renderCharts(agg, getHistory());
 
+  // アドバイス
+  const adviceList = document.getElementById('adviceList');
+  if (adviceList) renderAdvice(adviceList, generateAdvice(agg));
+
   // 詳細テーブル
   const monthlyTable = document.getElementById('monthlyTable');
   if (monthlyTable) renderMonthlyTable(monthlyTable, agg, breakdown.byMonth);
@@ -295,9 +319,10 @@ downloadBtn.addEventListener('click', async () => {
   try {
     const bank = applyExclusions(state.bank, state.excluded);
     const breakdown = sourceBreakdown(bank, state.card);
+    const advice = generateAdvice(state.agg);
     // 現在画面に描画されているグラフを PNG として収集し、Excel のダッシュボードに埋め込む
     const chartImages = await collectChartImages();
-    const wb = await buildWorkbook({ bank, card: state.card, agg: state.agg, chartImages, breakdown });
+    const wb = await buildWorkbook({ bank, card: state.card, agg: state.agg, chartImages, breakdown, advice });
     const blob = await writeWorkbookBlob(wb);
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');

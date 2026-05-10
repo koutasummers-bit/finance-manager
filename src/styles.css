@@ -229,6 +229,34 @@ tr.auto-exclude { background: #f0f7ff; }
 .data-table .badge.smbc { background: #e6f4ea; color: #1e8e3e; }
 .data-table .badge.vpass { background: #fef7e0; color: #b06000; }
 
+.advice-list {
+  display: grid;
+  gap: 8px;
+  margin: 12px 0;
+}
+.advice-card {
+  display: flex;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  border-left: 4px solid var(--primary);
+  background: #f0f4ff;
+  align-items: flex-start;
+}
+.advice-card.alert { border-color: var(--danger); background: #fdecea; }
+.advice-card.warning { border-color: var(--warn); background: #fff8e6; }
+.advice-card.info { border-color: #1e8e3e; background: #e6f4ea; }
+.advice-card .icon { font-size: 22px; line-height: 1; flex-shrink: 0; }
+.advice-card .body { flex: 1; min-width: 0; }
+.advice-card .title { font-weight: 600; font-size: 14px; }
+.advice-card .detail { color: var(--muted); font-size: 12px; margin-top: 2px; }
+.advice-empty {
+  color: var(--muted);
+  font-size: 13px;
+  padding: 12px;
+  text-align: center;
+}
+
 footer {
   text-align: center;
   font-size: 12px;
