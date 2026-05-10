@@ -14,7 +14,7 @@ describe('buildWorkbook', () => {
     const agg = aggregate(bank, card);
     const wb = await buildWorkbook({ bank, card, agg });
     const names = wb.worksheets.map((s) => s.name);
-    expect(names).toEqual(['月次サマリ', '銀行明細', 'カード明細', 'カテゴリ別集計']);
+    expect(names).toEqual(['ダッシュボード', '月次サマリ', 'カテゴリ別集計', '銀行明細', 'カード明細']);
 
     const summary = wb.getWorksheet('月次サマリ');
     expect(summary.rowCount).toBeGreaterThan(1);

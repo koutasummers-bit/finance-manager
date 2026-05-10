@@ -8,7 +8,8 @@ import { aggregate } from './core/aggregate.js';
 import { buildWorkbook, writeWorkbookBlob, suggestFileName } from './output/excel.js';
 import { saveAggregation, clearHistory, getHistory } from './storage/history.js';
 import defaultRules from './rules.default.json';
-import { renderCharts, destroyCharts } from './ui/charts-view.js';
+import { renderCharts, destroyCharts, collectChartImages } from './ui/charts-view.js';
+import { renderCategoryTable, renderTopTxTable, renderMonthlyTable } from './ui/detail-tables.js';
 
 // アプリケーション状態 (シンプルさ優先で単一オブジェクト)。
 const state = {
@@ -255,19 +256,44 @@ function renderSummary(agg) {
 
   destroyCharts();
   renderCharts(agg, getHistory());
+
+  // 詳細テーブル
+  const monthlyTable = document.getElementById('monthlyTable');
+  if (monthlyTable) renderMonthlyTable(monthlyTable, agg);
+
+  const expenseCatTable = document.getElementById('expenseCatTable');
+  if (expenseCatTable) renderCategoryTable(expenseCatTable, agg, 'expense');
+
+  const incomeCatTable = document.getElementById('incomeCatTable');
+  if (incomeCatTable) renderCategoryTable(incomeCatTable, agg, 'income');
+
+  const topTxTable = document.getElementById('topTxTable');
+  if (topTxTable) {
+    const allTx = [...applyExclusions(state.bank, state.excluded), ...state.card];
+    renderTopTxTable(topTxTable, allTx, 20);
+  }
 }
 
 downloadBtn.addEventListener('click', async () => {
   if (!state.agg) return;
-  const bank = applyExclusions(state.bank, state.excluded);
-  const wb = await buildWorkbook({ bank, card: state.card, agg: state.agg });
-  const blob = await writeWorkbookBlob(wb);
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = suggestFileName(state.agg.months);
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  downloadBtn.disabled = true;
+  downloadBtn.textContent = 'Excel生成中...';
+  try {
+    const bank = applyExclusions(state.bank, state.excluded);
+    // 現在画面に描画されているグラフを PNG として収集し、Excel のダッシュボードに埋め込む
+    const chartImages = await collectChartImages();
+    const wb = await buildWorkbook({ bank, card: state.card, agg: state.agg, chartImages });
+    const blob = await writeWorkbookBlob(wb);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = suggestFileName(state.agg.months);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } finally {
+    downloadBtn.disabled = false;
+    downloadBtn.textContent = 'Excel(.xlsx) をダウンロード（グラフ入り）';
+  }
 });

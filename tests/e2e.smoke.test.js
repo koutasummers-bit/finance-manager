@@ -84,7 +84,7 @@ describe('end-to-end pipeline (browser-like)', () => {
 
     // Excel 生成
     const wb = await buildWorkbook({ bank: bankWithExclusions, card, agg });
-    expect(wb.worksheets.length).toBe(4);
+    expect(wb.worksheets.length).toBe(5);
     const blob = await writeWorkbookBlob(wb);
     expect(blob.size).toBeGreaterThan(1000);
     expect(blob.type).toContain('spreadsheet');

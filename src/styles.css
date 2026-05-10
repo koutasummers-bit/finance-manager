@@ -160,17 +160,73 @@ tr.auto-exclude { background: #f0f7ff; }
 
 .charts {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
   gap: 16px;
   margin: 16px 0;
 }
 .chart-card {
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 12px;
+  padding: 14px 16px;
   background: #fff;
 }
-.chart-card canvas { width: 100% !important; height: 240px !important; }
+.chart-card.wide { grid-column: 1 / -1; }
+.chart-card canvas { width: 100% !important; height: 280px !important; }
+.chart-card.wide canvas { height: 320px !important; }
+
+.section-title {
+  margin: 24px 0 8px;
+  padding-bottom: 6px;
+  font-size: 15px;
+  color: var(--fg);
+  border-bottom: 2px solid var(--primary);
+  display: inline-block;
+}
+
+.table-scroll {
+  overflow-x: auto;
+  margin-bottom: 8px;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.data-table th, .data-table td {
+  padding: 8px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.data-table th {
+  background: #f3f5f7;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+}
+.data-table th.sortable { cursor: pointer; user-select: none; }
+.data-table th.sortable:hover { background: #e8ecef; }
+.data-table th.sorted-asc::after { content: ' ▲'; opacity: 0.6; }
+.data-table th.sorted-desc::after { content: ' ▼'; opacity: 0.6; }
+.data-table tr:hover td { background: #fafbfc; }
+.data-table .total-row td { background: #f0f4ff; font-weight: 600; border-top: 2px solid var(--primary); }
+.data-table td.num, .data-table th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.data-table td.positive { color: #1e8e3e; }
+.data-table td.negative { color: var(--danger); }
+.data-table .badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: #e8f0fe;
+  color: var(--primary);
+}
+.data-table .badge.smbc { background: #e6f4ea; color: #1e8e3e; }
+.data-table .badge.vpass { background: #fef7e0; color: #b06000; }
 
 footer {
   text-align: center;

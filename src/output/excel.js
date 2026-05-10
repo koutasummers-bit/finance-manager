@@ -163,15 +163,104 @@ function buildPivotSheet(workbook, agg) {
   return sheet;
 }
 
-export async function buildWorkbook({ bank, card, agg }) {
+function buildDashboardSheet(workbook, agg, chartImages) {
+  const sheet = workbook.addWorksheet('ダッシュボード');
+  sheet.columns = [
+    { width: 3 }, { width: 22 }, { width: 18 }, { width: 18 }, { width: 18 },
+    { width: 18 }, { width: 18 }, { width: 18 }, { width: 18 }, { width: 18 },
+  ];
+
+  // タイトル
+  sheet.mergeCells('B2:I2');
+  const title = sheet.getCell('B2');
+  title.value = '家計簿ダッシュボード';
+  title.font = { size: 18, bold: true, color: { argb: 'FF1A73E8' } };
+  title.alignment = { vertical: 'middle', horizontal: 'left' };
+
+  const period = agg.months.length > 0 ? `${agg.months[0]} 〜 ${agg.months[agg.months.length - 1]}` : '';
+  sheet.mergeCells('B3:I3');
+  const periodCell = sheet.getCell('B3');
+  periodCell.value = `期間: ${period}（${agg.months.length}ヶ月）`;
+  periodCell.font = { size: 11, color: { argb: 'FF6B7280' } };
+
+  // KPI ボックス
+  const kpiStartRow = 5;
+  const kpiData = [
+    ['収入合計', agg.totals.grandIncome, 'FF34A853'],
+    ['支出合計', agg.totals.grandExpense, 'FFEA4335'],
+    ['収支', agg.totals.grandIncome - agg.totals.grandExpense, 'FF1A73E8'],
+    ['月平均支出', agg.months.length ? Math.round(agg.totals.grandExpense / agg.months.length) : 0, 'FF6B7280'],
+  ];
+  for (let i = 0; i < kpiData.length; i++) {
+    const [label, value, color] = kpiData[i];
+    const col = 2 + i * 2;
+    const labelCell = sheet.getCell(kpiStartRow, col);
+    labelCell.value = label;
+    labelCell.font = { size: 10, color: { argb: 'FF6B7280' } };
+    labelCell.alignment = { horizontal: 'left' };
+
+    const valueCell = sheet.getCell(kpiStartRow + 1, col);
+    valueCell.value = value;
+    valueCell.font = { size: 16, bold: true, color: { argb: color } };
+    valueCell.numFmt = MONEY;
+    valueCell.alignment = { horizontal: 'left' };
+    sheet.mergeCells(kpiStartRow + 1, col, kpiStartRow + 1, col + 1);
+    sheet.mergeCells(kpiStartRow, col, kpiStartRow, col + 1);
+  }
+
+  // チャート画像を 2 列レイアウトで配置
+  if (chartImages && chartImages.length > 0) {
+    const chartTopRow = kpiStartRow + 4;
+    let row = chartTopRow;
+    let col = 1; // B 列起点 (0=A, 1=B)
+    for (let i = 0; i < chartImages.length; i++) {
+      const img = chartImages[i];
+      const isWide = img.id === 'chartStacked' || img.id === 'chartLines';
+      const imageId = workbook.addImage({ buffer: img.buffer, extension: 'png' });
+
+      // 見出しセル
+      const headerCell = sheet.getCell(row, col + 1);
+      headerCell.value = img.title;
+      headerCell.font = { size: 12, bold: true };
+      if (isWide) sheet.mergeCells(row, col + 1, row, col + 8);
+
+      // 画像
+      const imgRow = row + 1;
+      const width = isWide ? 720 : 380;
+      const height = 280;
+      sheet.addImage(imageId, {
+        tl: { col: col, row: imgRow - 1 },
+        ext: { width, height },
+      });
+
+      // 次の位置を計算 (画像高さ約280pxを15行で確保)
+      if (isWide) {
+        row += 17;
+        col = 1;
+      } else {
+        if (col === 1) {
+          col = 5; // 同じ行の右隣
+        } else {
+          col = 1;
+          row += 17;
+        }
+      }
+    }
+  }
+
+  return sheet;
+}
+
+export async function buildWorkbook({ bank, card, agg, chartImages = [] }) {
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'finance-manager';
   workbook.created = new Date();
 
+  buildDashboardSheet(workbook, agg, chartImages);
   buildSummarySheet(workbook, agg);
+  buildPivotSheet(workbook, agg);
   buildBankSheet(workbook, bank);
   buildCardSheet(workbook, card);
-  buildPivotSheet(workbook, agg);
 
   return workbook;
 }

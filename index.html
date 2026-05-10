@@ -58,16 +58,64 @@
             <canvas id="chartTotals"></canvas>
           </div>
           <div class="chart-card">
+            <h3>支出カテゴリ構成 (期間合計)</h3>
+            <canvas id="chartPie"></canvas>
+          </div>
+          <div class="chart-card wide">
             <h3>カテゴリ別 月次推移 (積み上げ)</h3>
             <canvas id="chartStacked"></canvas>
           </div>
-          <div class="chart-card">
-            <h3>主要カテゴリ 推移</h3>
+          <div class="chart-card wide">
+            <h3>主要カテゴリ 推移 (上位5)</h3>
             <canvas id="chartLines"></canvas>
           </div>
         </div>
+
+        <h3 class="section-title">月別の収支</h3>
+        <p class="hint">各月の収入・支出・収支と、その月の支出を最も多く占める3カテゴリ。</p>
+        <div class="table-scroll">
+          <table id="monthlyTable" class="data-table">
+            <thead></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <h3 class="section-title">カテゴリ別 詳細 (支出)</h3>
+        <p class="hint">列ヘッダをクリックでソート。各セルの値は「ネット支出（カテゴリ内の収入と相殺後）」。</p>
+        <div class="table-scroll">
+          <table id="expenseCatTable" class="data-table">
+            <thead></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <h3 class="section-title">カテゴリ別 詳細 (収入)</h3>
+        <div class="table-scroll">
+          <table id="incomeCatTable" class="data-table">
+            <thead></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+        <h3 class="section-title">高額支出 TOP 20</h3>
+        <p class="hint">期間中の支出を高い順に。突発的な出費や見直しポイントを発見できます。</p>
+        <div class="table-scroll">
+          <table id="topTxTable" class="data-table">
+            <thead>
+              <tr>
+                <th>日付</th>
+                <th>内容</th>
+                <th class="num">金額</th>
+                <th>カテゴリ</th>
+                <th>ソース</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
         <div class="actions">
-          <button type="button" id="downloadBtn">Excel(.xlsx) をダウンロード</button>
+          <button type="button" id="downloadBtn">Excel(.xlsx) をダウンロード（グラフ入り）</button>
           <button type="button" id="saveHistoryBtn" class="secondary">履歴に保存（ブラウザ内）</button>
         </div>
       </section>
