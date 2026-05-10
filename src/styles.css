@@ -229,6 +229,86 @@ tr.auto-exclude { background: #f0f7ff; }
 .data-table .badge.smbc { background: #e6f4ea; color: #1e8e3e; }
 .data-table .badge.vpass { background: #fef7e0; color: #b06000; }
 
+/* カテゴリ詳細テーブルのデータバーとドリルダウン */
+.data-table td.cat-cell { white-space: nowrap; }
+.data-table .cat-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  vertical-align: middle;
+  margin-right: 8px;
+}
+.data-table .cat-toggle {
+  display: inline-block;
+  margin-left: 8px;
+  color: var(--muted);
+  font-size: 10px;
+  transition: transform 0.15s ease-in-out;
+}
+.data-table .cat-row { cursor: pointer; }
+.data-table .cat-row.expanded { background: #eef4ff !important; }
+.data-table .cat-row.expanded .cat-toggle { transform: rotate(90deg); color: var(--primary); }
+
+.data-table td.has-bar {
+  position: relative;
+  overflow: hidden;
+}
+.data-table td.has-bar .bar-fill {
+  position: absolute;
+  top: 6px;
+  bottom: 6px;
+  right: 4px;
+  opacity: 0.22;
+  border-radius: 3px;
+  z-index: 0;
+  pointer-events: none;
+}
+.data-table td.has-bar .bar-val {
+  position: relative;
+  z-index: 1;
+  display: inline-block;
+  padding-right: 4px;
+  font-variant-numeric: tabular-nums;
+}
+.data-table td.has-bar.emphasis .bar-val { font-weight: 600; }
+.data-table td.has-bar.emphasis .bar-fill { opacity: 0.32; }
+
+.data-table .drill-row td {
+  padding: 0;
+  background: #fafbfc;
+  border-bottom: 1px solid var(--border);
+}
+.data-table .drill-content {
+  padding: 12px 20px 16px;
+  max-height: 360px;
+  overflow-y: auto;
+}
+.data-table .drill-title {
+  font-weight: 600;
+  font-size: 13px;
+  margin-bottom: 8px;
+  color: var(--primary);
+}
+.data-table .drill-table {
+  width: 100%;
+  font-size: 12px;
+  border-collapse: collapse;
+}
+.data-table .drill-table th {
+  background: #fff;
+  text-align: left;
+  padding: 6px 10px;
+  position: static;
+  border-bottom: 1px solid var(--border);
+}
+.data-table .drill-table td {
+  padding: 5px 10px;
+  border-bottom: 1px solid #eef0f3;
+  white-space: nowrap;
+}
+.data-table .drill-table tr:last-child td { border-bottom: 0; }
+
 .advice-list {
   display: grid;
   gap: 8px;

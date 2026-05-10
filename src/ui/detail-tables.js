@@ -1,5 +1,11 @@
-// カテゴリ別クロス集計テーブルと「高額支出 TOP N」テーブルを描画するモジュール。
+// カテゴリ別クロス集計テーブルと「高額支出 TOP N」テーブル、月別収支テーブルを描画するモジュール。
 // 集計は aggregate.js の結果 (summary[month][category]) を直接使う。
+
+const PALETTE = [
+  '#1a73e8', '#34a853', '#fbbc04', '#ea4335', '#9334e6',
+  '#0d9488', '#f97316', '#ec4899', '#0891b2', '#65a30d',
+  '#6b7280', '#7c3aed', '#dc2626', '#059669', '#d97706',
+];
 
 function fmtYen(n) {
   if (n == null || Number.isNaN(n)) return '-';
@@ -18,10 +24,19 @@ function escapeHtml(s) {
   );
 }
 
+// 値・最大値・色からデータバー付きセルの HTML を作る。値が 0 は通常表示。
+function barCell(value, max, color) {
+  if (!value || value <= 0) return `<td class="num"><span class="hint">-</span></td>`;
+  const pct = max > 0 ? Math.max(2, Math.min(100, (value / max) * 100)) : 0;
+  return `<td class="num has-bar">` +
+    `<span class="bar-fill" style="width:${pct}%;background:${color}"></span>` +
+    `<span class="bar-val">${fmtYen(value)}</span>` +
+    `</td>`;
+}
+
 // カテゴリ × 月のクロス集計テーブル。
-// rows = カテゴリ、cols = 月（新しい順）、合計列・月平均・構成比を末尾に追加。
-// ヘッダクリックでソート可能。
-export function renderCategoryTable(table, agg, kind = 'expense') {
+// transactions: 該当期間のすべての取引 (drill-down 用、省略可)
+export function renderCategoryTable(table, agg, kind = 'expense', transactions = []) {
   // expense: 支出カテゴリ、income: 収入カテゴリ
   const cats = kind === 'income' ? agg.incomeCategories : agg.categories;
   // 月は新しい順で表示
@@ -38,6 +53,15 @@ export function renderCategoryTable(table, agg, kind = 'expense') {
     const pct = grandTotal > 0 ? total / grandTotal : 0;
     return { cat, total, avg, pct, monthly };
   });
+
+  // カテゴリの色は「総額の大きい順」で割り当てる (グラフの円グラフと一致)
+  const byTotalDesc = [...rows].sort((a, b) => b.total - a.total);
+  const colorMap = {};
+  byTotalDesc.forEach((r, i) => { colorMap[r.cat] = PALETTE[i % PALETTE.length]; });
+
+  // 各月の最大値 (バー長計算用)
+  const colMax = months.map((_, i) => Math.max(...rows.map((r) => r.monthly[i] ?? 0), 0));
+  const totalMax = Math.max(...rows.map((r) => r.total), 0);
 
   // デフォルトは合計降順
   rows.sort((a, b) => b.total - a.total);
@@ -64,34 +88,98 @@ export function renderCategoryTable(table, agg, kind = 'expense') {
   }
   thead.appendChild(trH);
 
+  const colCount = headers.length;
+
+  const drillForCategory = (cat) => {
+    const matching = (transactions || [])
+      .filter((t) => (t.category ?? '未分類') === cat && (t.amount ?? 0) !== 0)
+      .sort((a, b) => Math.abs(b.amount) - Math.abs(a.amount));
+    if (matching.length === 0) {
+      return `<div class="drill-content"><div class="hint">該当する取引がありません</div></div>`;
+    }
+    const total = matching.reduce((s, t) => s + Math.abs(t.amount ?? 0), 0);
+    return `<div class="drill-content">
+      <div class="drill-title">「${escapeHtml(cat)}」の取引 ${matching.length}件 / 合計 ${fmtYen(total)}</div>
+      <table class="drill-table">
+        <thead><tr>
+          <th>日付</th><th>内容</th><th class="num">金額</th>
+          <th>サブカテゴリ</th><th>ソース</th>
+        </tr></thead>
+        <tbody>
+          ${matching.map((t) => `<tr>
+            <td>${t.date}</td>
+            <td>${escapeHtml(t.description ?? '')}</td>
+            <td class="num">${fmtYen(t.amount)}</td>
+            <td>${escapeHtml(t.subcategory ?? '')}</td>
+            <td><span class="badge ${t.source}">${(t.source ?? '').toUpperCase()}</span></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+  };
+
   const renderBody = (sorted) => {
     tbody.innerHTML = '';
-    for (const row of sorted) {
-      const tr = document.createElement('tr');
-      tr.innerHTML =
-        `<td>${escapeHtml(row.cat)}</td>` +
-        `<td class="num"><strong>${fmtYen(row.total)}</strong></td>` +
-        `<td class="num">${fmtYen(row.avg)}</td>` +
-        `<td class="num">${fmtPct(row.pct)}</td>` +
-        row.monthly.map((v) => `<td class="num">${v ? fmtYen(v) : '<span class="hint">-</span>'}</td>`).join('');
-      tbody.appendChild(tr);
-    }
-    if (rows.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="${headers.length}" class="hint">該当カテゴリがありません</td></tr>`;
+    if (sorted.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="${colCount}" class="hint">該当カテゴリがありません</td></tr>`;
       return;
     }
+
+    for (const row of sorted) {
+      const color = colorMap[row.cat];
+      const tr = document.createElement('tr');
+      tr.className = 'cat-row';
+      tr.dataset.category = row.cat;
+      tr.innerHTML =
+        `<td class="cat-cell">` +
+          `<span class="cat-dot" style="background:${color}"></span>` +
+          `<strong>${escapeHtml(row.cat)}</strong>` +
+          `<span class="cat-toggle">▶</span>` +
+        `</td>` +
+        // 合計: 行間で正規化したバー
+        barCell(row.total, totalMax, color).replace('class="num has-bar"', 'class="num has-bar emphasis"') +
+        // 月平均
+        `<td class="num">${fmtYen(row.avg)}</td>` +
+        // 構成比: 0–100% の bar
+        `<td class="num has-bar">` +
+          `<span class="bar-fill" style="width:${(row.pct * 100).toFixed(1)}%;background:${color}"></span>` +
+          `<span class="bar-val">${fmtPct(row.pct)}</span>` +
+        `</td>` +
+        // 各月: 列内の最大値で正規化
+        row.monthly.map((v, i) => barCell(v, colMax[i], color)).join('');
+
+      tr.addEventListener('click', (e) => {
+        // ヘッダ行の選択などをブロックしない
+        if (e.target.closest('th')) return;
+        const next = tr.nextElementSibling;
+        if (next?.classList.contains('drill-row')) {
+          next.remove();
+          tr.classList.remove('expanded');
+          return;
+        }
+        // 開いている他のドリルを閉じる
+        tbody.querySelectorAll('.drill-row').forEach((d) => d.remove());
+        tbody.querySelectorAll('.cat-row.expanded').forEach((r) => r.classList.remove('expanded'));
+        const drillTr = document.createElement('tr');
+        drillTr.className = 'drill-row';
+        drillTr.innerHTML = `<td colspan="${colCount}">${drillForCategory(row.cat)}</td>`;
+        tr.after(drillTr);
+        tr.classList.add('expanded');
+      });
+
+      tbody.appendChild(tr);
+    }
+
     // 合計行
     const totalRow = document.createElement('tr');
     totalRow.className = 'total-row';
+    const monthlyTotals = months.map((m, i) => sorted.reduce((s, r) => s + (r.monthly[i] ?? 0), 0));
     totalRow.innerHTML =
       `<td><strong>合計</strong></td>` +
       `<td class="num"><strong>${fmtYen(grandTotal)}</strong></td>` +
       `<td class="num">${fmtYen(months.length ? grandTotal / months.length : 0)}</td>` +
       `<td class="num">100%</td>` +
-      months.map((m, i) => {
-        const v = sorted.reduce((s, r) => s + (r.monthly[i] ?? 0), 0);
-        return `<td class="num">${fmtYen(v)}</td>`;
-      }).join('');
+      monthlyTotals.map((v) => `<td class="num">${fmtYen(v)}</td>`).join('');
     tbody.appendChild(totalRow);
   };
 

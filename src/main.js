@@ -439,15 +439,15 @@ function renderSummary(agg) {
   const monthlyTable = document.getElementById('monthlyTable');
   if (monthlyTable) renderMonthlyTable(monthlyTable, agg, breakdown.byMonth);
 
+  const allTx = [...filteredBank, ...filteredCard];
   const expenseCatTable = document.getElementById('expenseCatTable');
-  if (expenseCatTable) renderCategoryTable(expenseCatTable, agg, 'expense');
+  if (expenseCatTable) renderCategoryTable(expenseCatTable, agg, 'expense', allTx);
 
   const incomeCatTable = document.getElementById('incomeCatTable');
-  if (incomeCatTable) renderCategoryTable(incomeCatTable, agg, 'income');
+  if (incomeCatTable) renderCategoryTable(incomeCatTable, agg, 'income', allTx);
 
   const topTxTable = document.getElementById('topTxTable');
   if (topTxTable) {
-    const allTx = [...filteredBank, ...filteredCard];
     renderTopTxTable(topTxTable, allTx, 20);
   }
 }
